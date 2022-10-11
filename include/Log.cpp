@@ -15,7 +15,7 @@
  *                 6 - Trace: Log traceback information to the output
  *                 7 - All: Log everything else to the output
  */
-template <typename T> void Log::setLogLevel(uint8_t ui_level)
+template <typename T> void Log<T>::setLogLevel(uint8_t ui_level)
 {
     this->ui_log_level = ui_level;
 }
@@ -34,7 +34,7 @@ template <typename T> void Log::setLogLevel(uint8_t ui_level)
  *                 6 - Trace: Log traceback information to the output
  *                 7 - All: Log everything else to the output
  */
-template <typename T> void Log::getLogLevel(void)
+template <typename T> void Log<T>::getLogLevel(void)
 {
     return this->ui_log_level;
 }
@@ -46,7 +46,7 @@ template <typename T> void Log::getLogLevel(void)
  *
  * @param data information to log to the output.
  */
-template <typename T> void Log::log(T data, uint8_t level)
+template <typename T> template <typename Tdata> void Log<T>::log(Tdata data, uint8_t level)
 {
     
     tOutputPort->write(data);

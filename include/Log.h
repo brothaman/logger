@@ -6,8 +6,8 @@ class Log
 {
     public:
         // function to log data
-        template <typename T>
-        size_t log(T data, uint8_t level);
+        template <typename Tdata>
+        size_t log(Tdata data, uint8_t level);
 
         // set error level
         void setLogLevel(uint8_t);
