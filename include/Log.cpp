@@ -1,5 +1,17 @@
 #include "Log.h"
 
+template class Log<int>;
+
+template <class T> const char Log<T>::asLogLevel[eAll][6] = {
+            "\0",
+            "FATAL",
+            "ERROR",
+            "WARN",
+            "INFO",
+            "TRACE",
+            "ALL"
+        };
+
 /**
  * setLogLevel
  *
@@ -15,9 +27,17 @@
  *                 6 - Trace: Log traceback information to the output
  *                 7 - All: Log everything else to the output
  */
-template <typename T> void Log<T>::setLogLevel(uint8_t ui_level)
+template <class T> void Log<T>::setLogLevel(uint8_t ui_level)
 {
-    this->ui_log_level = ui_level;
+    if (ui_level < eNone && ui_level > eAll)
+    {
+        // throw an exception
+        this->ui_log_level = eNone;
+    }
+    else
+    {
+        this->ui_log_level = ui_level;
+    }
 }
 
 /**
@@ -34,7 +54,7 @@ template <typename T> void Log<T>::setLogLevel(uint8_t ui_level)
  *                 6 - Trace: Log traceback information to the output
  *                 7 - All: Log everything else to the output
  */
-template <typename T> void Log<T>::getLogLevel(void)
+template <class T> uint8_t Log<T>::getLogLevel(void)
 {
     return this->ui_log_level;
 }
@@ -46,8 +66,16 @@ template <typename T> void Log<T>::getLogLevel(void)
  *
  * @param data information to log to the output.
  */
-template <typename T> template <typename Tdata> void Log<T>::log(Tdata data, uint8_t level)
+template <class T> template <class Tdata> void Log<T>::log(typename Tdata data, uint8_t level)
 {
-    
-    tOutputPort->write(data);
+    this->t_output_port->write(data);
+}
+
+/* CONSTRUCTOR */
+template <class T> Log<T>::Log(void *_output_port)
+{
+    this->t_output_port = _output_port;
+    // TODO: configure a serial port for use
+    // if arduino use hardware serial
+    // if _avr_ configure serial port for output at 9600 baud
 }
