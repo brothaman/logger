@@ -178,14 +178,16 @@ template <class T> template <class Tdata> void Log<T>::log(Tdata data, uint8_t l
         // end the ANSI escape sequence
         this->t_output_port->write('m');
 
+        // write the log level to the output port
+        for (int i=0; level!=kNone && as_log_level[level][i]!=0x0 && i<ui_log_level_string_length; i++)
+            this->t_output_port->write(as_log_level[level][i] );
+        this->t_output_port->write(':');
+        this->t_output_port->write('\t');
+
         // reset output to standard ANSI escape sequence
         this->t_output_port->write('\033');
         this->t_output_port->write('[');
         this->t_output_port->write('m');
-
-        // write the log level to the output port
-        for (int i=0; level!=kNone && i<ui_log_level_string_length; i++)
-            this->t_output_port->write(as_log_level[level][i] );
     }
     // TODO: add support for actually writing and interpreting data based on type
     this->t_output_port->write(data);
