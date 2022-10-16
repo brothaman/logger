@@ -56,13 +56,15 @@ class Log
         // enum to set log level
         enum eLogLevel
         {
-            kNone=1,
+            kNone,
             kFatal,
             kError,
             kWarn,
             kInfo,
             kTrace,
-            kAll
+            kAll,
+
+            kLogLevels
         };
 
         // enum for communication type
@@ -83,14 +85,14 @@ class Log
         static const uint8_t ui_log_level_string_length;
         
         // string to go with 
-        static const char as_log_level[kAll][ui_log_level_string_length];
+        static const char as_log_level[kLogLevels][ui_log_level_string_length];
 
         /**
          * as_log_level_color
          *
          * @brief a 3 digit corresponding to the ANSI code to format text
          */
-        static const char as_log_level_color[kAll][4];
+        static const char as_log_level_color[kLogLevels][4];
 
 //        /**
 //         *
@@ -113,7 +115,7 @@ class Log
 };
 
 template <class T> const uint8_t Log<T>::ui_log_level_string_length = 6;
-template <class T> const char Log<T>::as_log_level[kAll][ui_log_level_string_length] = 
+template <class T> const char Log<T>::as_log_level[kLogLevels][ui_log_level_string_length] = 
 {
     "\0",
     "FATAL",
@@ -124,19 +126,19 @@ template <class T> const char Log<T>::as_log_level[kAll][ui_log_level_string_len
     "ALL"
 };
 // TODO: add support for configuring these values
-template <class T> const char Log<T>::as_log_level_color[kAll][4] = 
+template <class T> const char Log<T>::as_log_level_color[kLogLevels][4] = 
 {
     "\0",
-    "001",
     "041",
     "031",
     "093",
     "090",
-    "096"
+    "096",
+    "001"
 };
 template <class T> void Log<T>::setLogLevel(uint8_t ui_level)
 {
-    if (ui_level < kNone && ui_level > kAll)
+    if (ui_level < kNone && ui_level > kLogLevels)
     {
         // throw an exception
         this->ui_config_log_level = kNone;
@@ -182,12 +184,14 @@ template <class T> template <class Tdata> void Log<T>::log(Tdata data, uint8_t l
         for (int i=0; level!=kNone && as_log_level[level][i]!=0x0 && i<ui_log_level_string_length; i++)
             this->t_output_port->write(as_log_level[level][i] );
         this->t_output_port->write(':');
-        this->t_output_port->write('\t');
 
         // reset output to standard ANSI escape sequence
         this->t_output_port->write('\033');
         this->t_output_port->write('[');
         this->t_output_port->write('m');
+
+        // add a space between debug level
+        this->t_output_port->write('\t');
     }
     // TODO: add support for actually writing and interpreting data based on type
     this->t_output_port->write(data);
