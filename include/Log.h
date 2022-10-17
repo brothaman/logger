@@ -82,7 +82,7 @@ class Log
         uint8_t ui_config_ansi;
 
         // length of the log level string
-        static const uint8_t ui_log_level_string_length;
+        static const uint8_t ui_log_level_string_length = 6;
         
         // string to go with 
         static const char as_log_level[kLogLevels][ui_log_level_string_length];
@@ -114,7 +114,7 @@ class Log
          T *t_output_port;
 };
 
-template <class T> const uint8_t Log<T>::ui_log_level_string_length = 6;
+template <class T> const uint8_t Log<T>::ui_log_level_string_length;
 template <class T> const char Log<T>::as_log_level[kLogLevels][ui_log_level_string_length] = 
 {
     "\0",

@@ -1,0 +1,4 @@
+*.out
+*.h.gch
+*.dSYM
+*.o
