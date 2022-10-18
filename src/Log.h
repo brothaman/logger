@@ -197,6 +197,7 @@ template <class T> template <class Tdata> void Log<T>::log(Tdata data, uint8_t l
     this->t_output_port->write(data);
 
     // add a new line at the end
+    this->t_output_port->write('\r');
     this->t_output_port->write('\n');
 }
 
