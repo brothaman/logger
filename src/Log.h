@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 
 template <class T>
 class Log
@@ -10,6 +11,15 @@ class Log
     public:
         /* CONSTRUCTOR */
         Log(T *_output_port);
+
+        /**
+         * logln
+         *
+         * @brief conditionally log line data to output based on log level
+         *
+         * @param data information to log to the output.
+         */
+        template <class Tdata> void logln(Tdata data, uint8_t level);
 
         /**
          * log
@@ -81,6 +91,9 @@ class Log
         // config ansi support
         uint8_t ui_config_ansi;
 
+        // variable for line length to use for header
+        uint16_t ui_buffer_length;
+
         // length of the log level string
         static const uint8_t ui_log_level_string_length = 6;
         
@@ -93,6 +106,13 @@ class Log
          * @brief a 3 digit corresponding to the ANSI code to format text
          */
         static const char as_log_level_color[kLogLevels][4];
+
+        /**
+         * vAddHeader
+         *
+         * @brief add the header for the log output
+         */
+        void vAddHeader(uint8_t level);
 
 //        /**
 //         *
@@ -154,6 +174,49 @@ template <class T> uint8_t Log<T>::getLogLevel(void)
     return this->ui_log_level;
 }
 
+template <class T> void Log<T>::vAddHeader(uint8_t level)
+{
+    // begin the ANSI escape sequence
+    this->t_output_port->write('\033');
+    this->t_output_port->write('[');
+
+    // add format prefixes
+    this->t_output_port->write(';');
+    for (int i=0; as_log_level_color[level][i] != 0x00 && i<3; i++)
+        this->t_output_port->write(as_log_level_color[level][i]);
+
+    // if the log level is anything but all add color
+    this->t_output_port->write(';');
+    for (int i=0; level!=kAll && as_log_level_color[level][i]!=0x00 && i<3; i++)
+        this->t_output_port->write(as_log_level_color[level][i]);
+
+    // end the ANSI escape sequence
+    this->t_output_port->write('m');
+
+    // increment the buffer index
+    this->ui_buffer_length += 11;
+
+    // write the log level to the output port
+    for (int i=0; level!=kNone && as_log_level[level][i]!=0x0 && i<ui_log_level_string_length; i++)
+    {
+        this->t_output_port->write(as_log_level[level][i] );
+        this->ui_buffer_length++;
+    }
+    this->t_output_port->write(':');
+
+    // reset output to standard ANSI escape sequence
+    this->t_output_port->write('\033');
+    this->t_output_port->write('[');
+    this->t_output_port->write('m');
+
+    // add a space between debug level
+    this->t_output_port->write('\t');
+
+    // increment the buffer index
+    this->ui_buffer_length += 5;
+
+}
+
 template <class T> template <class Tdata> void Log<T>::log(Tdata data, uint8_t level)
 {
     // if requested log level is greater than the configured level dont log
@@ -161,50 +224,49 @@ template <class T> template <class Tdata> void Log<T>::log(Tdata data, uint8_t l
         return;
 
     // add formatted prefix to output
-    if (level != kNone && ui_config_ansi)
+    if (level != kNone && this->ui_config_ansi && this->ui_buffer_length == 0)
     {
-        // begin the ANSI escape sequence
-        this->t_output_port->write('\033');
-        this->t_output_port->write('[');
-
-        // add format prefixes
-        this->t_output_port->write(';');
-        for (int i=0; as_log_level_color[level][i] != 0x00 && i<3; i++)
-            this->t_output_port->write(as_log_level_color[level][i]);
-
-        // if the log level is anything but all add color
-        this->t_output_port->write(';');
-        for (int i=0; level!=kAll && as_log_level_color[level][i]!=0x00 && i<3; i++)
-            this->t_output_port->write(as_log_level_color[level][i]);
-
-        // end the ANSI escape sequence
-        this->t_output_port->write('m');
-
-        // write the log level to the output port
-        for (int i=0; level!=kNone && as_log_level[level][i]!=0x0 && i<ui_log_level_string_length; i++)
-            this->t_output_port->write(as_log_level[level][i] );
-        this->t_output_port->write(':');
-
-        // reset output to standard ANSI escape sequence
-        this->t_output_port->write('\033');
-        this->t_output_port->write('[');
-        this->t_output_port->write('m');
-
-        // add a space between debug level
-        this->t_output_port->write('\t');
+        vAddHeader(level);
     }
     // TODO: add support for actually writing and interpreting data based on type
     this->t_output_port->write(data);
 
-    // add a new line at the end
+    // assume that data is in the a c-style string
+    int len = strlen(data);
+    if (data[len-1] != '\n' && data[len-2] != '\n')
+    {
+        // then 
+        this->ui_buffer_length += len;
+    }
+    else
+        this->ui_buffer_length = 0;
+}
+
+template <class T> template <class Tdata> void Log<T>::logln(Tdata data, uint8_t level)
+{
+    // if requested log level is greater than the configured level dont log
+    if (level > ui_config_log_level)
+        return;
+
+    // add formatted prefix to output
+    if (level != kNone && this->ui_config_ansi && this->ui_buffer_length == 0)
+    {
+        vAddHeader(level);
+    }
+    // TODO: add support for actually writing and interpreting data based on type
+    this->t_output_port->write(data);
+
     this->t_output_port->write('\r');
     this->t_output_port->write('\n');
+    this->ui_buffer_length = 0;
 }
 
 /* CONSTRUCTOR */
 template <class T> Log<T>::Log(T *_output_port)
 {
     this->t_output_port = _output_port;
+    ui_buffer_length = 0;
+    this->ui_config_ansi = 1;
     // TODO: configure a serial port for use
     // if arduino use hardware serial
     // if _avr_ configure serial port for output at 9600 baud
